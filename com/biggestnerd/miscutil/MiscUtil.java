@@ -1,30 +1,20 @@
 package com.biggestnerd.miscutil;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
-import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.entity.monster.EntityPigZombie;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent.NameFormat;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
-import cpw.mods.fml.common.network.FMLNetworkEvent.ClientConnectedToServerEvent;
 
 @Mod(modid="miscutil", name="Miscellaneous Utilities", version="v1.2")
 public class MiscUtil {
@@ -55,6 +45,19 @@ public class MiscUtil {
 	    if (mc.thePlayer != null && !animatePortals) {
 	      mc.thePlayer.timeInPortal = 0.0F;
 	    }
+	    if(mc.theWorld != null) {
+	    	List players = mc.theWorld.loadedEntityList;
+		      for(Object o : players) {
+		    	if(o instanceof EntityOtherPlayerMP) {
+		    		((EntityOtherPlayerMP) o).refreshDisplayName();
+		    	}
+		      }
+	    }
+	}
+	
+	@SubscribeEvent(priority = EventPriority.HIGH)
+	public void nameFormat(NameFormat e) {
+		e.displayname += " (" + (int) mc.thePlayer.getDistanceToEntity(e.entity) + "m)";
 	}
 	
 	@SubscribeEvent
