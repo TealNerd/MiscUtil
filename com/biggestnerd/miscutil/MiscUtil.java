@@ -27,22 +27,14 @@ public class MiscUtil {
 	ServerData last;
 	int counter = 0;
 	
-	static boolean renderPigmen;
-	static boolean animatePortals;
-	static boolean autoJoin;
-	static boolean nameDist;
+	static boolean renderPigmen = false;
+	static boolean animatePortals = false;
+	static boolean autoJoin = true;
+	static boolean nameDist = true;
+	static boolean noInvis = true;
 	
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
-		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-		config.load();
-		
-		renderPigmen = config.get(config.CATEGORY_GENERAL, "renderPigmen", false).getBoolean();
-		animatePortals = config.get(config.CATEGORY_GENERAL, "animatePortals", false).getBoolean();
-		autoJoin = config.get(config.CATEGORY_GENERAL, "autoJoin", true).getBoolean();
-		nameDist = config.get(config.CATEGORY_GENERAL, "nameDist", true).getBoolean();
-		
-		config.save();
 		
 		FMLCommonHandler.instance().bus().register(this);
 	    MinecraftForge.EVENT_BUS.register(this);
@@ -58,7 +50,11 @@ public class MiscUtil {
 	    	List players = mc.theWorld.loadedEntityList;
 		      for(Object o : players) {
 		    	if(o instanceof EntityOtherPlayerMP) {
-		    		((EntityOtherPlayerMP) o).refreshDisplayName();
+		    		EntityOtherPlayerMP eop = (EntityOtherPlayerMP) o;
+		    		eop.refreshDisplayName();
+		    		if(eop.isInvisibleToPlayer(mc.thePlayer)) {
+		    			eop.setInvisible(false);
+		    		}
 		    	}
 		      }
 	    }
