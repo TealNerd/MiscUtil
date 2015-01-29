@@ -1,16 +1,21 @@
 package com.biggestnerd.miscutil;
 
+import java.awt.Color;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityOtherPlayerMP;
 import net.minecraft.client.gui.GuiDisconnected;
+import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.entity.monster.EntityPigZombie;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.event.entity.player.PlayerEvent.NameFormat;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
@@ -26,6 +31,9 @@ public class MiscUtil {
 	Minecraft mc = Minecraft.getMinecraft();
 	ServerData last;
 	int counter = 0;
+	int tps = 20;
+	int tpsloop = 400;
+	Pattern tpsPattern = Pattern.compile("^TPS from last 1m, 5m, 15m: [*]?([0-9]+).*$");
 	
 	static boolean renderPigmen = false;
 	static boolean animatePortals = false;
@@ -42,6 +50,29 @@ public class MiscUtil {
 	}
 	  
 	@SubscribeEvent
+	public void renderOverlay(RenderGameOverlayEvent event) {
+		if(event.type == RenderGameOverlayEvent.ElementType.EXPERIENCE && last.serverIP.contains("mc.civcraft.vg")) {
+			int h = 6;
+			if(tps >= 18)
+				mc.fontRenderer.drawStringWithShadow("TPS: " + tps, 50, h, Color.GREEN.getRGB());
+			if(tps >= 13 && tps < 18)
+				mc.fontRenderer.drawStringWithShadow("TPS: " + tps, 50, h, Color.YELLOW.getRGB());
+			if(tps < 13)
+				mc.fontRenderer.drawStringWithShadow("TPS: " + tps, 50, h, Color.RED.getRGB());
+		}
+	}
+	
+	@SubscribeEvent
+	public void onChat(ClientChatReceivedEvent event) {
+		String msg = event.message.getUnformattedText();
+		Matcher tpsMatcher = tpsPattern.matcher(msg);
+		while(tpsMatcher.find()) {
+			event.setCanceled(true);
+			tps = Integer.parseInt(tpsMatcher.group(1));
+		}
+	}
+	
+	@SubscribeEvent
 	public void onTick(TickEvent.ClientTickEvent event) {
 	    if (mc.thePlayer != null && !animatePortals) {
 	      mc.thePlayer.timeInPortal = 0.0F;
@@ -57,6 +88,14 @@ public class MiscUtil {
 		    		}
 		    	}
 		      }
+		      if(last.serverIP.contains("mc.civcraft.vg")) {
+		    	  if(tpsloop >= 420) {
+		    		  mc.thePlayer.sendChatMessage("/tps");
+		    		  tpsloop = 0;
+		    	  } else {
+		    		  tpsloop++;
+		    	  }
+		      }
 	    }
 	    if(mc.currentScreen instanceof GuiDisconnected) {
 			if(counter <= 420) {
@@ -66,7 +105,7 @@ public class MiscUtil {
 		if(mc.currentScreen instanceof GuiConnecting && mc.func_147104_D() != null) {
 			last = mc.func_147104_D();
 		}
-		if(counter >= 450 && autoJoin) {
+		if(counter >= 420 && autoJoin) {
 			mc.displayGuiScreen(new GuiConnecting(mc.currentScreen, mc, last));
 			System.out.println("Connecting to " + last.serverIP);
 			counter = 0;
